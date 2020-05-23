@@ -1,0 +1,222 @@
+---
+title: "Week 5 Assignment"
+author: "Sharad Bajpai"
+date: "10/13/2019"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(readxl)
+library(magrittr)
+na.vals <- c("", "NA", "n/a", "N/A", "none")
+library(readr)
+farmers_market_csv <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Week4/farmers_market.csv.csv")
+View(farmers_market_csv)
+```
+Question 1:
+Add a new column Season1Days that contains the number of days a market is opened per week (for the dates it is open).
+```{r}
+farmers_market_csv$Season1Days<-str_count(farmers_market_csv$Season1Time, "Mon|Tue|Wed|Thu|Fri|Sat|Sun")
+View(farmers_market_csv)
+```
+
+Question 2:
+Add a new column WeekendOpen indicating whether a market opens during
+weekends in Season1.
+
+```{r}
+farmers_market_csv$WeekendOpen<-str_count(farmers_market_csv$Season1Time, "Sat|Sun")
+Q2<-farmers_market_csv$WeekendOpen
+Q2<-ifelse(Q2 == 1, "Yes", "No")
+farmers_market_csv$WeekendOpen<-Q2
+head(farmers_market_csv$WeekendOpen)
+```
+
+Question 3:
+Find out which markets close before 6PM, and which open only for fewer
+than 4 hours a day. For simplicity, consider only Season1Time. For markets with
+different open hours across a week, use the average length of open hours for the days
+they actually open.
+
+```{r}
+#Selecting Market Name, FMID AND Season1Time from dataset
+Q3 <- farmers_market_csv %>% 
+      select(FMID, MarketName, Season1Time)
+clean1<-str_replace_all(Q3$Season1Time, "^[A-Za-z:]+[ ]|^[A-Za-z]+[:]","")
+clean_Q3 <- str_replace(clean1, ";", "")
+#Cleaning up data and fetching time
+
+# view(as.date.frame(clean_Q3))
+# Extracting the starting time
+st <- str_extract(clean1, "^[0-9]+[:][0-9]+[ ][A-Za-z]+ ")
+
+#view(as.data.frame(st))
+#Setting it in the date-time format using parse function
+parse_date_time(st, "%I %M %p")
+
+# Extracting the closing Time
+ct<- str_extract(clean_Q3, "[0-9]+[:][0-9]+[ ][A-Za-z]+$")
+#view(as.data.frame(ct))
+#Similarly, we will set it to the date-time format using parse function
+parse_date_time(ct, "%I%M%p")
+
+Q3$Season1Time<-clean_Q3
+
+#Adding constraint to the market that closes before 6 pm 
+before_six <- parse_time("6:00 PM")
+
+#Mutating Starting and closing time column to the Q3 dataframe
+st_ct <- mutate(Q3, begin = st, end = ct)
+
+Q3_final <- filter(st_ct, abs(parse_time(begin)- parse_time(end)) < 14400, parse_time(end) < before_six)
+Q3_final
+```
+
+Question 4:
+The seasons are not standardized and would make analysis difficult. Create
+four new columns for four seasons (Spring, Summer, Fall, Winter), indicating whether
+a market is available in that season. Also, create two additional columns HalfYear and
+YearRound to identify those who open across seasons. Define “half year” and “year
+round” on your own terms, but explain them before you write the code (or as
+comments in your code).
+
+```{r}
+# I am replacing the month names in Season1Date with dates to make it easier to calculate the duration
+farmers_market_csv$Season1Date <-
+  str_replace_all(
+    farmers_market_csv$Season1Date,
+    c("January" = "01/01/2017", "February" = "02/01/2017",
+      "March" ="03/01/2017", "April" = "04/01/2017",
+      "May" = "05/01/2017", "June" = "06/01/2017",
+      "July" = "06/01/2017", "August" = "08/01/2017",
+      "September" ="09/01/2017", "October" = "10/01/2017",
+      "November" ="11/01/2017", "December" = "12/01/2017"))
+
+# Extract the opening date of markets
+season1_sd <- str_extract(farmers_market_csv$Season1Date, "^[0-9]+[/][0-9]+[/][0-9]+")
+# Extract the closing date of markets
+season1_ed <- str_extract(farmers_market_csv$Season1Date, "[0-9]+[/][0-9]+[/][0-9]+$")
+
+#Now I am changing all the years to the same year 2017 to make the analysis easier.
+change_sd <- str_replace(season1_sd, "[0-9]+$" , "2017")
+change_ed <- str_replace(season1_ed, "[0-9]+$" , "2017")
+
+#Now I am changing the date format to the 24 hour date format using parse_date
+change_sd <- parse_date(change_sd, "%m/%d/%Y")
+change_ed <- parse_date(change_ed, "%m/%d/%Y")
+
+#I am creating date ranges for the four seasons
+Winter_sd <- as.Date("2017-12-01")
+Spring_sd <- as.Date("2017-03-01")
+Summer_sd <- as.Date("2017-06-01")
+Fall_sd <- as.Date("2017-09-01")
+
+#Creating intervals for the seasons
+Winter_season <- interval (Winter_sd, Spring_sd + years(1))
+Spring_season <- interval (Spring_sd, Summer_sd)
+Summer_season <- interval (Summer_sd, Fall_sd)
+Fall_season <- interval (Fall_sd, Winter_sd)
+#Creating half year beginning from the start date of winter and extending for 6 months
+Half_year <- interval (change_sd, change_sd + months(6))
+#Creating Year round beginning from the start date of winter and extending to start date of fall. And then three more months addition to get a Year of 12 months.
+Year_round <- interval (Winter_sd, Fall_sd + months(3))
+
+Winter_season
+Spring_season
+Summer_season
+Fall_season
+
+farmers_market_csv <- farmers_market_csv %>% mutate(
+    Season1_startdate = change_sd,
+    Season1_enddate = change_ed,
+    Season1_enddate = if_else(
+                              Season1_enddate < Season1_startdate,
+                              Season1_enddate + years(1),
+                              Season1_enddate
+    ),
+    Season1_interval = interval(Season1_startdate, Season1_enddate),
+    Winter_season = int_overlaps(Season1_interval, Winter_season),
+    Spring_season = int_overlaps(Season1_interval, Spring_season),
+    Summer_season = int_overlaps(Season1_interval, Summer_season),
+    Fall_season = int_overlaps(Season1_interval, Fall_season),
+    Year_round = int_overlaps(Season1_interval, Year_round),
+    Half_year = int_overlaps(Season1_interval, Half_year)
+    )
+farmers_market_csv$Summer_season <- gsub("TRUE","OPEN", farmers_market_csv$Summer_season)
+farmers_market_csv$Summer_season <- gsub("FALSE","CLOSED", farmers_market_csv$Summer_season)
+farmers_market_csv$Spring_season <- gsub("TRUE","OPEN", farmers_market_csv$Spring_season)
+farmers_market_csv$Spring_season <- gsub("FALSE","CLOSED", farmers_market_csv$Spring_season)
+farmers_market_csv$Winter_season <- gsub("TRUE","OPEN", farmers_market_csv$Winter_season)
+farmers_market_csv$Winter_season <- gsub("FALSE","CLOSED", farmers_market_csv$Winter_season)
+farmers_market_csv$Fall_season <- gsub("TRUE","OPEN", farmers_market_csv$Fall_season)
+farmers_market_csv$Fall_season <- gsub("FALSE","CLOSED", farmers_market_csv$Fall_season)
+farmers_market_csv$Year_round <- gsub("TRUE","OPEN", farmers_market_csv$Year_round)
+farmers_market_csv$Year_round <- gsub("FALSE","CLOSED", farmers_market_csv$Year_round)
+farmers_market_csv$Half_year <- gsub("TRUE","OPEN", farmers_market_csv$Half_year)
+farmers_market_csv$Half_year <- gsub("FALSE","CLOSED", farmers_market_csv$Half_year)
+view(farmers_market_csv)
+```
+Question 5:
+Open question: explore the new variables you just created. Aggregate them at different geographic levels, or some other categorical variable. What can you discover?
+
+```{r}
+library(ggplot2)
+
+
+SummerPlot <- ggplot(data = farmers_market_csv)+
+              geom_bar(mapping = aes(x = State, fill = Summer_season)) +
+              coord_flip()
+SummerPlot
+```
+As we can see, more than fifty percent of the markets are open all over the United States during the summer season. Only Few number of markets are closed. This suggest that during this season there will be more production and more revenue generation. 
+
+```{r}
+Spring_Plot <- ggplot(data = farmers_market_csv)+
+  geom_bar(mapping = aes(x = State, fill = Spring_season)) +
+  coord_flip()
+Spring_Plot
+```
+In Spring season, approximately fifty percent of the marktets are open which means there is a moderate amount of produce and revenue generation. As compared to summer season, markets are more closed in spring season. California and New York has the highest number of markets in the summer Season.
+```{r}
+Fall_Plot <- ggplot(data = farmers_market_csv)+
+  geom_bar(mapping = aes(x = State, fill = Fall_season)) +
+  coord_flip()
+Fall_Plot
+```
+During Fall season, most of the markets are open. Very few are closed. As compared to spring, fall has more market exposure.
+```{r}
+Winter_Plot <- ggplot(data = farmers_market_csv)+
+  geom_bar(mapping = aes(x = State, fill = Winter_season)) +
+  coord_flip()
+Winter_Plot
+```
+During Winter, very few markets are open. More than fifty percent of markets are closed which is the worst when compared to all the other seasons.
+
+```{r}
+Halfyear_Plot <- ggplot(data = farmers_market_csv)+
+  geom_bar(mapping = aes(x = State, fill = Half_year)) +
+  coord_flip()
+Halfyear_Plot
+```
+Half Year round shows that California has the most number of markets open, and the second most in number is New York. The least number of markets open are in Virgin Islands.
+```{r}
+Yearround_Plot <- ggplot(data = farmers_market_csv)+
+  geom_bar(mapping = aes(x = State, fill = Year_round)) +
+  coord_flip()
+Yearround_Plot
+```
+Year Round visualization of markets in the USA shows that California has the highest number of open markets whereas Florida has the second most number of open markets.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```

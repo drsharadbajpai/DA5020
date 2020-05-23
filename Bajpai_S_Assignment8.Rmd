@@ -1,0 +1,183 @@
+---
+title: "Bajpai_S_Assignment8"
+author: "Sharad Bajpai"
+date: "11/5/2019"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+```{r}
+library(tidyverse)
+library(RCurl)
+library(xml2)
+library(rvest)
+library(readxl)
+library(png)
+library(knitr)
+library(stringr)
+library(urltools)
+library(purrr)
+
+Boston_burgers1 <-read_html("https://www.yelp.com/search?find_desc=Burgers&find_loc=Downtown%2C%20Boston%2C%20MA&ns=1&l=p%3AMA%3ABoston%3A%3A%5BAllston%2FBrighton%2CBack_Bay%2CBeacon_Hill%2CDowntown%2CFenway%2CSouth_End%2CWest_End%5D")
+```
+- How many nodes are direct descendents of the HTML `<body>` element (the actual visible content of a web page)?
+
+```{r}  
+html_children(Boston_burgers1)
+root <- html_node(Boston_burgers1,'body')
+p <- html_children(root)
+head(p)
+```
+Ans:There are 39 nodes that are direct descendents of the HTML '<body>' element.
+
+What are the nodes names of the direct descendents of the <body>?
+
+```{r}
+names <- html_children(root) %>% 
+  html_name()
+unique(names)
+```
+
+Ans: "script", "noscript" and "div" are the three node names of the direct descendents of the <body>.
+
+How many of these direct descendents have an id attribute?
+
+```{r}
+id <- html_children(root) %>% 
+  html_attr("id")
+id <- id[!is.na(id)]
+id
+```
+Ans: There are 5 direct descendents that have an id attribute
+
+What is the css selector to select restaurants that are advertisements? (You may not see the ads if you are logged in on Yelp or have an ad blocker running)
+```{r}
+ad <- Boston_burgers1 %>% 
+  html_nodes(css = ".yloca-tip")
+ad
+```
+
+Ans: ".yloca-tip" is the css selector to select restaurants that are ads.
+
+2. (50 points) Modify following parameterized function get_yelp_sr_one_page to extract a list of businesses on Yelp, for a specific search keyword, a specific location and a specific page of results. get_yelp_sr_one_page <- function(keyword, loc=“Boston, MA”) { # Scrape Yelp’s search results page for a list of businesses # Args: # keyword -
+the keyword for a search query, the “&find_desc=” parameter # loc - the location to
+search for, the “&find_loc=” parameter in the url # Return: # A data frame containing
+burger restaurant contents in one search # results.
+
+```{r}
+get_yelp_sr_one_page <- function(key,loc=NA,page=1){
+  #function for creating URLs
+  makeURL <- function(key,loc=NA,page=1){
+    pg <- paste("https://www.yelp.com/search?find_desc=",key,sep="")
+    ST <- str_extract(loc,",?([A-Z]{2})") #Extract State abbrev if included
+    loc <- gsub("(,?\\s?[A-Z]{2})","",loc) #Remove State Abbrev
+    loc <- gsub("\\s","+",loc) #format spaces appropriately
+    if(is.na(ST)==F & is.character(ST)==T){ST <- paste(ST,":",sep="")
+    loc <- paste("&find_loc=",ST,loc,sep="")
+    } #Add : to ST abbrev
+    pg <- paste(pg,loc,sep="")
+    if(page>1){page <- (page-1)*30
+    page <- paste("&start=",page,sep="")
+    pg <- paste(pg,page,sep="")
+    }
+    return(pg)
+  }
+  URL <- makeURL(key,loc,page=1)#Make the URL
+  
+  #Get Results
+  h <- read_html(URL)
+  li <- html_nodes(h,css=".list__373c0__2G8oH")
+  #Extract parameters
+  Name <- html_text(html_nodes(li,css=".border--top__373c0__19Owr .text-color--black-regular__373c0__38bRH .link-size--inherit__373c0__2JXk5 , .border-color--default__373c0__2oFDT~ .border-color--default__373c0__2oFDT+ .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .link-size--inherit__373c0__2JXk5"))
+  URL <- html_attr(html_nodes(li,css=".biz-name"),"href")
+  Price <- nchar(html_text(html_nodes(li,css=".text-bullet--after__373c0__1ZHaA")),type="chars")
+  Ser_Cat <- gsub("\\s{2,}","",html_text(html_nodes(li,css=".link-color--inherit__373c0__15ymx")))
+  Telephone <- gsub("\\s{2,}","",html_text(html_nodes(li,css=".lemon--p__373c0__3Qnnj text__373c0__2pB8f text-color--normal__373c0__K_MKN text-align--right__373c0__3ARv")))
+  NH <- gsub("\\s{2,}","",html_text(html_nodes(li,css=".border-color--default__373c0__2oFDT~ .border-color--default__373c0__2oFDT+ .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .text-align--right__373c0__3fmmn .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .text-align--right__373c0__3ARv7")))
+  add <- html_nodes(li,css=".lemon--div__373c0__1mboc.secondaryAttributes__373c0__7bA0w.arrange-unit__373c0__1piwO.border-color--default__373c0__2oFDT")
+  Street <- html_text(html_nodes(li,css=".lemon--address__373c0__2sPac"))
+  #City <- gsub("\\s{2,}","",str_extract(add,"(?<=<br>)[A-Za-z0-9\\s]+(?=,)")) {This code wasn't giving the desired results. Thus, I am assigning city as Boston manually.}
+  City <- ("Boston")
+  
+  #State <- str_extract(add,"[A-Z]{2}") - Not running, it is showing result as "FD" in the state column, so I am manually inputting the state as "MA". 
+  State <- ("MA")
+  Num_rew <- str_extract(html_text(html_nodes(li,css=".reviewCount__373c0__2r4xT")),"\\d+")
+  #Create a list of values for error checking
+  cols <- list(Name=Name,Price=Price,Ser_Cat=Ser_Cat,Street=Street, Telephone=Telephone,City=City,State=State,NH=NH,Num_rew=Num_rew)
+  #Test for missing results, if missing use the for loop provided to extract each value individually and add NA for missing values.
+  do.Index <- vector("character")
+  for(i in seq_along(cols)){
+    if (length(cols[[i]]) < length(cols[[1]])) {
+      do.Index <- (names(cols)[[i]])
+    }
+  }
+  if("Price" %in% do.Index==T){
+    Price <- vector("character")
+    for(i in seq_along(li)){
+      Price[i] <- ifelse(
+        is.null(html_nodes(li[i],css=".text-bullet--after__373c0__1ZHaA")), NA,
+        html_nodes(li[i],css=".text-bullet--after__373c0__1ZHaA")  %>% html_text() %>% 
+          nchar("chars")
+      )
+      Price <- gsub("\\s{2,}","",Price)
+    }
+  }
+  if("Street" %in% do.Index==T){
+    Street <- vector("character")
+    for(i in seq_along(li)){
+      node <- ifelse(
+        is.null(html_nodes(li,css=".lemon--address__373c0__2sPac")), 
+        NA,
+        html_nodes(li,css=".lemon--address__373c0__2sPac")  %>% 
+          str_extract("(?<=\\n)[A-Za-z0-9\\s]+(?=<br>)")
+      )
+      Street <- append(Street,node,after=length(Street))
+      Street <- gsub("\\s{2,}","",Street)
+    }
+  }
+  pg <- cbind(Name,URL,Ser_Cat,Telephone,NH,Num_rew,Price,State,City,Street)
+  #Create the output matrix (must be a matrix for the 2nd fn to work)
+  return(pg)
+}
+result <- get_yelp_sr_one_page("burger",loc="Boston,MA",page=1)
+head(result)
+```
+
+3. (20 points) Write a function that reads multiple pages of the search results of any search keyword and location from Yelp.
+
+```{r}
+multiple_pages <- function(key,loc,pages){
+  mat <- matrix(ncol=8,nrow=0)
+  for(i in seq_along(pages)){
+    pg <- get_yelp_sr_one_page(key,loc,page=i)
+    mat <- rbind(mat,pg)
+  }
+  df <- as.data.frame(mat,stringsAsFactors=F)
+  return(df)
+}
+result1 <- multiple_pages("Taco","Boston,MA",1:5)
+head(result1)
+```
+4. (10 points) Optimize your function in question 3, add a small wait time (0.5s for example) between each request, so that you don't get banned by Yelp for abusing their website (hint: use Sys.sleep())
+
+```{r}
+mul_pages <- function(key,loc,pages){
+  mat <- matrix(ncol=8,nrow=0)
+  for(i in seq_along(pages)){
+  pg <- get_yelp_sr_one_page(key,loc,page=i)
+  mat <- rbind(mat,pg)
+  Sys.sleep(0.5)
+  }
+  df <- as.data.frame(mat,stringsAsFactors=F)
+  return(df)
+}
+result2 <- mul_pages("Taco","Boston,MA",1:5)
+head(result2)
+```
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```

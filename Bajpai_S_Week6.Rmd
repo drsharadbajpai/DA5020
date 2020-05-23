@@ -1,0 +1,187 @@
+---
+title: "DA5020 - Week 6 Assignment Tidy and Relational Data Operations"
+author: "Sharad Bajpai"
+date: "10/15/2019"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+
+## Questions
+
+1. (20 points) Download the unemployment and education data files from blackboard and save the files to your working directory folder. Load both the unemployment data and the education data into R. Review the education data. Identify where variable names are actually values for a specific variable. Identify when multiple rows are data for the same entity. Identify when specific columns contain more than one atomic value. Tidy up the education data using spread, gather and separate. 
+```{r}
+library(tidyverse)
+library(readr)
+FipsEducationsDA5020 <- read_csv("C:/Users/bajpa/Downloads/Google Chrome downloads/DA5020/FipsEducationsDA5020.csv")
+View(FipsEducationsDA5020)
+
+library(readr)
+FipsUnemploymentDA5020 <- read_csv("C:/Users/bajpa/Downloads/Google Chrome downloads/DA5020/FipsUnemploymentDA5020.csv")
+View(FipsUnemploymentDA5020)
+
+Unemployment <- FipsUnemploymentDA5020
+Education <- FipsEducationsDA5020
+
+Education1 <- spread(Education, key = percent_measure, value = percent)
+Education1 <- separate(Education1, county_state, into=c("State", "County"))
+
+```
+
+2. (15 points) Break apart the education data into three distinct tibbles. One tibble named education contains the education data, another tibble named fips, contains the fips number definition, and the third tibble named rural_urban_code contains the textual description of the 9 different urban to rural data descriptions. These three tibbles must be linked together to represent the relationships between the tibbles. For example, the fips table will contain 3,192 rows, where each row represents the definition of a fips number (County, State). Each row in the education table will contain the educational attainment of a spcific county. It also will contain a fips number since this data is specific to a county within a state. 
+```{r}
+names(Education1)[10] <- "percent_less_hs_diploma"
+Edu <-select(Education1, fips, year, percent_four_plus_years_college, percent_has_some_college, percent_hs_diploma, percent_less_hs_diploma)
+Edu <- unique(Edu)
+Edu <- as_tibble(Edu)
+
+fps <- select(Education1, fips, County, State)
+fps <- unique(fps)
+fps <- as_tibble(fps)
+
+rural <- select(Education1, fips, rural_urban_cont_code, description)
+rural <- rural[!duplicated(rural$description), ]
+rural <- rural[-1]
+rural <- as_tibble(rural)
+
+```
+3. (5 points) Answer the following questions about your tibbles: The fips column in the education table - is it a foreign or a primary key for the education tibble?  What is the primary key for your education tibble? The rural_urban code tibble should only contain 9 rows. What is its primary key?
+
+The fips column in the Edu table is a foreign key for the Edu tibble.
+The primary key for the Edu tibble is the year and fips.
+The primary key of the rural tibble is rural_urban_cont_code.
+
+
+
+4. (50 points) Write expressions to answer the following queries: 
++ 4.0 In the year 1970, what is the percent of the population not attaining a high school diploma for the Nantucket county in Massachusetts? What about the year 2015?
+
+```{r}
+q0_1970 <- Education1 %>% filter(year=="1970", County=="Nantucket")
+q0_1970
+# 33.7%
+
+q0_2015 <- Education1 %>% 
+           filter(year == "2015", County == "Nantucket")
+q0_2015
+# 5.2%
+```
+The population not attaining a high school diploma for the Nantucket county in Massachusetts in 1970 is 33.7% and in 2015 is 5.2%.
+
++ 4.1 What is the average percentage not receiving a high school diploma for the counties in Alabama for the year 2015?
+```{r}
+q1 <- Education1 %>% 
+      filter(year=="2015", State == "AL" ) %>% 
+      select(year, State, County, percent_less_hs_diploma) %>% 
+      mutate(Average = mean(percent_less_hs_diploma))
+q1
+# 19.8
+#The average percentage not receiving a high school diploma for the
+#counties in Alabama for the year 2015 is 19.8%
+
+```
++ 4.2 What is the average percentage of college graduates for the counties in the state of Massachusetts for the year 2015?
+```{r}
+
+q2 <- Education1 %>% 
+      filter(year=="2015", State=="MA") %>% 
+      select(year, State, County, percent_four_plus_years_college) %>% 
+      mutate(Average = mean(percent_four_plus_years_college))
+head(q2)
+#38.5
+```
+The average percentage of college graduates for the counties in the state of Massachusetts for the year 2015 is 38.5%
+
++ 4.3 Determine the average percentage of population not attaining a high school diploma for the counties in Alabama for each year within the dataset. The result should return the calendar year and the average percentage not attaining a high school diploma for that year.
+```{r}
+q3 <- Education1 %>% 
+  filter(State=="AL") %>% 
+  select(year, State, County, percent_less_hs_diploma) %>% 
+  group_by(year) %>% 
+  summarise(Avg = mean(percent_less_hs_diploma, na.rm=T))
+head(q3)
+
+```
++ 4.4 What is the most common rural_urban code for the U.S. counties?
+```{r}
+q4 <- Education1 %>% 
+      group_by(rural_urban_cont_code) %>% 
+      count(rural_urban_cont_code)
+q4
+```
+6 is the most common rural_urban code for US counties
+
++ 4.5 Which counties have not been coded with a rural urban code? Return a result that contains two fields: County, State for the counties that have not been assigned a rural urban code. Do not return duplicate values in the result.Order the result alphabetically by state. What does this result set represent?
+```{r}
+q5 <- Education1 %>% 
+      filter(rural_urban_cont_code=="NULL")
+q5_1 <- q5 %>% 
+     select(County, State)
+q5_1 <- unique(q5_1)
+head(q5_1)
+
+
+```
++ 4.6 What is the minimal percentage of college graduates for the counties in the state of Mississippi for the year 2010? What does the result represent?
+```{r}
+q6 <- Education1 %>% 
+      filter(State=="MS", year==2010)
+q6
+```
+There is no available data for the year 2010 in this dataset. Thus, we cannot determine minimal percentage of college graduates for the counties in the state of Mississippi for the year 2010
+
++ 4.7 In the year 2015, which fip counties, are above the average unemployment rate? Provide the county name, U.S. state name and the unemployment rate in the result. Sort in descending order by unemployment rate. 
+```{r}
+q7 <- inner_join(Education1 %>% filter(year == 2015),
+                 Unemployment %>% filter(year == 2015), by="fips") %>% 
+      filter(percent_unemployed > mean(percent_unemployed)) %>% 
+      select(County, State, percent_unemployed) %>% 
+      arrange(desc(percent_unemployed))
+head(q7)
+
+
+```
++ 4.8 In the year 2015, which fip counties, U.S. states contain a higher percentage of unemployed citizens than the percentage of college graduates? List the county name and the state name. Order the result alphabetically by state.
+```{r}
+q8 <-  inner_join(Education1 %>% 
+                    filter(year==2015), 
+                  Unemployment %>% 
+                    filter(year==2015), by="fips")
+q8 <- q8 %>% 
+        filter(percent_unemployed > percent_four_plus_years_college) %>% 
+        select(State, County, percent_unemployed, percent_four_plus_years_college) %>% 
+        arrange(State)
+head(q8)
+
+```
++ 4.9 Return the county, U.S. state and year that contains the highest percentage of college graduates in this dataset?
+```{r}
+q9 <- Education1 %>% 
+      select(County, State, year, percent_four_plus_years_college)
+summarise(q9, Highest_Percentage = max(percent_four_plus_years_college))
+
+q9ans <- q9 %>% 
+         filter(percent_four_plus_years_college==78.8)
+q9ans 
+```
+Falls county in Virginia contains the highest percentage of college graduate in this dataset
+
+5. (10 points) _Open question_: explore the unemployment rate and the percent not attaining a high school diploma over the time period in common for the two datasets. What can you discover? Create a plot that supports your discovery.
+```{r}
+q_5 <- inner_join(Education1, Unemployment, by = c("fips", "year"))
+ggplot(data = q_5, mapping=aes(x = percent_unemployed, y = percent_less_hs_diploma)) +
+  geom_smooth(mapping = aes(colour = percent_less_hs_diploma))
+```
+By looking at this graph we can see that there is a direct correlation between the education level rate and the unemployment rate.
+People who has more percent of education has higher employment rate.
+
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```

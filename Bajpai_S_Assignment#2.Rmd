@@ -1,0 +1,140 @@
+---
+title: "DA5020_Assignment#2"
+author: "Sharad Bajpai"
+date: "9/18/2019"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+options(tinytex.verbose = TRUE)
+```
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(readr)
+surveys <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Week2/surveys.csv")
+View(surveys)
+```
+1. 
+Write R code to extract the survey observations for the first three months of 1990 using the filter() function.
+
+```{r}
+q1<-surveys %>% 
+  filter(year=='1990', month<=3)
+View(q1)
+q1
+```
+2. 
+Sort the 1990 winter surveys data by descending order of record ID, then by ascending order of weight.
+
+```{r}
+q2<- surveys %>% 
+  filter(year=='1990', month %in% c(1,2,3)) %>% 
+  arrange(desc(record_id))
+q2
+
+q2a<- surveys %>% 
+  filter(year=='1990', month %in% c(1,2,3)) %>% 
+  arrange(weight)
+q2a
+```
+3.
+Write code that returns the record_id, sex and weight of all surveyed individuals of Reithrodontomys montanus (RO)
+
+```{r}
+q3 <- surveys %>% 
+  filter(species_id=='RO') %>% 
+  select(record_id, sex, weight)
+q3
+```
+
+4.
+Write code that returns the average weight and hindfoot length of Dipodomys merriami (DM) individuals observed in each month (irrespective of the year). Make sure to exclude NA values.
+```{r}
+q4 <- surveys %>% 
+  filter(species_id=='DM') %>%
+  group_by(month) %>% 
+  summarize(avg_weight=mean(weight, na.rm=TRUE), avg_hflength=mean(hindfoot_length, na.rm = TRUE))
+q4
+```
+5.
+Write  code that determines the number of individuals by species observed in the winter of 1990.
+```{r}
+q5 <- surveys %>% 
+  group_by(species_id) %>% 
+  filter(year=='1990', month%in%1:3) %>% 
+  summarize(count= n())
+q5
+```
+6.
+Create a dataframe named gapminder_df and mutate it to contain a column that contains the gross domestic product for each row in the data frame.
+
+```{r}
+install.packages("gapminder")
+library(gapminder)
+gapminder_df <- as.data.frame(gapminder)
+which(is.na(gapminder_df$pop))
+which(is.na(gapminder_df$gdpPercap))
+gapminder_df <- gapminder_df %>% 
+  mutate(GDP=gdpPercap*pop)
+```
+
+7.
+Calculate the Mean GDP for Cambodia for the years within the dataset. 
+
+```{r}
+Cambodia <- gapminder_df %>% 
+  filter(country=='Cambodia')
+view(Cambodia)
+Cambodia %>% 
+  summarize(Mean_dGDP=mean(GDP))
+```
+
+8. 
+Find the year with the maximum life expectancy for countries in Asia and arrange them in descending order by year,  The result should contain the country’s name, the year and the life expectancy.
+
+```{r}
+Life_Expectancy1<- gapminder_df %>%
+  filter(gapminder_df$continent=='Asia') %>% 
+  group_by(country) %>% 
+  top_n(1, wt=lifeExp)
+
+q8<-Life_Expectancy1 %>% 
+  select(country, continent, year, lifeExp) %>% 
+  arrange(desc(Life_Expectancy1$year))
+q8
+```
+
+9.
+Count the number of observations per continent.
+
+```{r}
+p<-gapminder_df %>% 
+  group_by(continent) %>% 
+  summarize("Observation"=n())
+
+gapminder_df %>% 
+  group_by(continent) %>% 
+  tally()
+```
+
+10.
+Compute the average and median life expectancy and GDP per capita by continent for the years 1952 and 2007.  Should we be optimistic given the results?
+  
+```{r}
+q10<- gapminder_df %>% 
+  filter(year%in%c('1952','2007')) %>% 
+  group_by(continent, year) %>% 
+  summarize(avg_lifeExp=mean(lifeExp), median_LifeExp=median(lifeExp),avg_gdppercap=mean(gdpPercap), median_GDPpercap=median(gdpPercap))
+q10  
+```  
+
+Yes, we should be optimistic after seeing the results as there is definite evidence of improvement in the GDP as well as life expectancy in 2007 as compared to 1952. Every continent has shown growth in terms of life expectancy as well as GDP per capita. 
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```

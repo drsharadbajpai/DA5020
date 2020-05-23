@@ -1,0 +1,163 @@
+---
+title: "Week 7"
+author: "Sharad Bajpai"
+date: "10/20/2019"
+output: pdf_document
+---
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+```{r}
+  library(tidyverse)
+  library(rvest)
+  library(knitr)
+  library(readxl)
+  library(png)
+  
+  Boston_burgers1 <- read_html("https://www.yelp.com/search?find_desc=Burgers&find_loc=Downtown%2C%20Boston%2C%20MA&ns=1&l=p%3AMA%3ABoston%3A%3A%5BAllston%2FBrighton%2CBack_Bay%2CBeacon_Hill%2CDowntown%2CFenway%2CSouth_End%2CWest_End%5D")
+  Boston_burgers2 <- read_html("https://www.yelp.com/search?find_desc=Burgers&find_loc=Downtown%2C%20Boston%2C%20MA&ns=1&l=p%3AMA%3ABoston%3A%3A%5BAllston%2FBrighton%2CBack_Bay%2CBeacon_Hill%2CDowntown%2CFenway%2CSouth_End%2CWest_End%5D&start=30")
+  Boston_burgers3 <- read_html("https://www.yelp.com/search?find_desc=Burgers&find_loc=Downtown%2C%20Boston%2C%20MA&ns=1&l=p%3AMA%3ABoston%3A%3A%5BAllston%2FBrighton%2CBack_Bay%2CBeacon_Hill%2CDowntown%2CFenway%2CSouth_End%2CWest_End%5D&start=60")
+```
+Two web-scrapping tools that I am using are Import.io and Rvest + SelectorGadget.
+Scrapping the yelp website using Import.io
+
+
+
+Scrapping the yelp website using Rvest and Selector-Gadget
+
+Scraping the Website for the restaurant names
+
+```{r}
+R_names <- Boston_burgers1 %>% 
+              html_nodes(".border--top__373c0__19Owr .text-color--black-regular__373c0__38bRH .link-size--inherit__373c0__2JXk5 , .border-color--default__373c0__2oFDT~ .border-color--default__373c0__2oFDT+ .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .link-size--inherit__373c0__2JXk5") %>% 
+html_text()
+R_names
+
+```
+Scraping the Website for the restaurant address
+```{r}
+R_add <- Boston_burgers1 %>% 
+          html_nodes(".text-align--right__373c0__3ARv7 a , .border-color--default__373c0__2oFDT~ .border-color--default__373c0__2oFDT+ .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .text-align--right__373c0__3fmmn .lemon--address__373c0__2sPac .lemon--span__373c0__3997G") %>% 
+html_text()
+R_add               
+```
+
+Scraping the Website for the restaurant Area
+```{r}
+R_area <- Boston_burgers1 %>% 
+  html_nodes(".border-color--default__373c0__2oFDT~ .border-color--default__373c0__2oFDT+ .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .text-align--right__373c0__3fmmn .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .text-align--right__373c0__3ARv7") %>% 
+html_text()
+R_area  
+```
+
+Scraping the Website for the restaurant Area
+```{r}
+R_area <- Boston_burgers1 %>% 
+  html_nodes(".u-space-b1 .border-color--default__373c0__2oFDT .border-color--default__373c0__2oFDT .text-align--right__373c0__3ARv7") %>% 
+  html_text()
+R_area
+```
+
+Scraping the Website for the restaurant review count
+```{r}
+R_rcount <- Boston_burgers1 %>% 
+  html_nodes(".reviewCount__373c0__2r4xT") %>% 
+  html_text()
+R_rcount
+```
+
+Scraping the Website for the restaurant price range
+
+```{r}
+R_prange <- Boston_burgers1 %>% 
+  html_nodes(".text-bullet--after__373c0__1ZHaA") %>% 
+  html_text()
+R_prange
+```
+
+Scraping the Website for the restaurant service categories
+```{r}
+R_prange <- Boston_burgers1 %>% 
+  html_nodes(".link-color--inherit__373c0__15ymx") %>% 
+  html_text()
+R_prange
+```
+
+Similarly, we can do for page 2 and page 3.
+
+B. Import the data you extracted into a data frame in R. Your data frame should have exactly 30 rows, and each row represents a burger restaurant in Boston.
+```{r}
+library(readr)
+yelp_data <- read_csv("C:/Users/bajpa/Downloads/Google Chrome downloads/Burgers_in_Boston-(Crawl-Run)---2019-10-20T233615Z.csv")
+yelp_data <- as.data.frame(yelp_data)
+View(yelp_data)
+```
+C. Write a report that compares the tools with a focus on cost, ease of use, features, and your recommendation. Discuss your experience with the tools and why you decided to use the one you picked in the end. Use screenshots of toolkits and your scraping process to support your statements.  Also include a screenshot or an excerpt of your data in the report.
+
+Ans:
+
+The two tools that I have used to web scrape are Rvest & Selector-Gadget and Import.io.
+Import.io enables software development teams who want to leverage web data with a comprehensive SaaS platform to extract and structure data from any web page. Import.io removes the complexities of working with web data, allowing you to unify fragmented data from across the internet into something you can trust.  By providing advanced capabilities like machine learning extraction, extensive content APIs, advanced data quality capabilities, etc.
+
+Cost: Import.io has a free version and a premium version. The free version has limited usage whereas the premium version provides various benefits. I used the free version to extract data from the yelp website. The Premium version allows users to transform data and make reports.
+
+Ease of Use: It has a very friendly user-interface that allows simple and clear directions for extracting data. There is an automatic approach and a manual approach. I used manual data extraction that helped me to extract accurate and complete data. It has advanced and standard measures for data scrapping. Thus, this application provides flexibility. It is very easy to use.
+
+Features:
+Auto-extraction - Automatically extract data from web pages into a structured dataset.
+Extractor builder - Point and click to build extractors.
+Authentication - Extract data from behind a login/password.
+Scheduler - Schedule extractors to run exactly when you need them to
+Reporting - What's changed reports and website comparison reports
+Online datastore - Use the SaaS platform to store data that is extracted
+Throughput - Fast, parallelized data acquisition distributed automatically by scalable cloud architecture
+Uptime - High availability for high volume usage
+
+Recommendation:
+Import.io is an incredible tool that allows easy extraction of web data. My suggestion would include the allowance of basic data transformation in the free version. I was unable to move columns within the table which made my table look unorganized. This is an excellent commercial tool that can be used by anyone.
+
+I used Rvest with the Selector-Gadget tool to scrape data from the yelp page.  Rvest is a library that is a part of the R programming language used to scrape web pages for data. Thus it is free of cost. Selector Gadget is an open-source Chrome Extension that makes CSS selector generation and discovery on complicated sites a breeze. I chose this tool as it was suggested in our classroom videos and it helped me to extract data quickly.
+
+Cost: Since R (Rvest) and Selector-Gadget are an open-source tool, they are free of cost and very convenient to use, financial-wise.
+
+Ease of use: My experience with Rvest and Selector-Gadget was good. I enjoyed using it as I followed the rules and syntax necessary to provide positive results. It is not easy for people who have no experience with a programming language to use this tool. For Rvest one needs to know to program whereas, for Selector-Gadget one should have some knowledge of the application. I used this tool for the first time and it wasn’t difficult for me to understand the functionality of the tool. Although, it does not always function the way you want it to. There were numerous instances when it didn’t do what I expected. One can easily follow the instructions given on the website to learn how to use it.
+
+Features:
+Selector-Gadget can be used for the following-
+For webpage scraping with tools such as Nokogiri and Beautiful Soup.To generate jQuery selectors for dynamic sites.As a tool to examine JavaScript-generated DOM structures.
+As a tool to help you style only particular elements on the page with your stylesheets.
+For selenium or phantomjs testing.
+ 
+Rvest can be used for the following-
+1. Extract components with html_tag() (the name of the tag). html_text() (all text inside the tag)
+2. Parse tables into data frames with html_table()
+3. Extract, modify and submit forms with html_form(), set_values() and submit_form().
+4. Detect  and repair encoding problems with guess_encoding() and repair_encoding().
+These are few of the many features of Rvest.
+ 
+Recommendation:
+My recommendation would be to improve the algorithm for the selector-gadget to make it more user-friendly. The selection criteria need to be addressed clearly so that the tool understands what the user is trying to ask. I can definitely say that it works very well with Rvest.
+
+D. Within your report describe what you have derived about the URL for yelp pages. What are the differences between the three URLs? What are the parameters that determined your search query (Boston burger restaurants in 8 selected neighborhoods)? What is(are) the parameter(s) used for pagination? Without opening Yelp.com in the browser, what is your guess of the URL for the 7th page of Chinese restaurants in New York?
+
+The three URLs used to scrape the first three pages are:
+1) https://www.yelp.com/search?find_desc=Burgers&find_loc=Downtown%2C%20Boston%2C%20MA&ns=1&l=p%3AMA%3ABoston%3A%3A%5BAllston%2FBrighton%2CBack_Bay%2CBeacon_Hill%2CDowntown%2CFenway%2CSouth_End%2CWest_End%5D&start=0
+2) https://www.yelp.com/search?find_desc=Burgers&find_loc=Downtown%2C%20Boston%2C%20MA&ns=1&l=p%3AMA%3ABoston%3A%3A%5BAllston%2FBrighton%2CBack_Bay%2CBeacon_Hill%2CDowntown%2CFenway%2CSouth_End%2CWest_End%5D&start=30
+3) https://www.yelp.com/search?find_desc=Burgers&find_loc=Downtown%2C%20Boston%2C%20MA&ns=1&l=p%3AMA%3ABoston%3A%3A%5BAllston%2FBrighton%2CBack_Bay%2CBeacon_Hill%2CDowntown%2CFenway%2CSouth_End%2CWest_End%5D&start=60
+
+The difference between the above three URLs is the start tag at the end of the link. The start tag denotes starting number of the restaurant on that page. Thus, for the first page, start tag is 0, for the second it is 30 and for the third it is 60.
+
+I can see three parameters in the above URL:
+The first parameter is at the beginning of the URL, "find_desc=Burgers".
+This parameter was set by me as I was searching for the restaurants that serve burgers.
+The second parameter is "find_loc=" which had seven filters. This parameter decides which location restaurants need to be shown.
+Third parameter is "start=0" = page 1, "start=30" = page 2, "start=60" = page 3. This is pagination as it leads to the page you have requested for. i.e. Page 1 has 30 search. next 30 are in page 2 and similarly in the 3rd page.
+
+
+what is your guess of the URL for the 7th page of Chinese restaurants in New York?
+https://www.yelp.com/search?find_desc=Chinese&find_loc=New%20York%2C%20NY
+
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```

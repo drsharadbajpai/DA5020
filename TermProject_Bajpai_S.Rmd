@@ -1,0 +1,417 @@
+---
+title: "Term Project"
+author: "Sharad Bajpai"
+date: "11/23/2019"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+
+Libraries required
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(knitr)
+library(readxl)
+library(png)
+```
+Importing datasets for Private Insurance:
+```{r}
+library(readr)
+California <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Private/California.csv")
+head(California)
+
+library(readr)
+NewYork <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Private/NewYork.csv")
+head(NewYork)
+
+library(readr)
+Pennsylvania <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Private/Pennsylvania.csv")
+head(Pennsylvania)
+
+library(readr)
+Virginia <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Private/Virginia.csv")
+head(Virginia)
+
+library(readr)
+Wisconsin <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Private/Wisconsin.csv")
+head(Wisconsin)
+```
+Cleaning the State column name:
+```{r}
+California$State<-gsub("[[:upper:]]","",California$State)
+California$State<-'CA'
+head(California)
+
+NewYork$State<-gsub("[[:upper:]]","",NewYork$State)
+NewYork$State<-'NY'
+head(NewYork)
+
+Pennsylvania$State<-gsub("[[:upper:]]","",Pennsylvania$State)
+Pennsylvania$State<-'PA'
+head(Pennsylvania)
+
+Virginia$State<-gsub("[[:upper:]]","",Virginia$State)
+Virginia$State<-'VA'
+head(Virginia)
+
+Wisconsin$State<-gsub("[[:upper:]]","",Wisconsin$State)
+Wisconsin$State<-'WI'
+head(Wisconsin)
+```
+
+Combining these datasets into one.
+```{r}
+Insurance<-rbind(California,NewYork,Pennsylvania,Virginia, Wisconsin)
+head(Insurance)
+Ins_Id <-1
+Insurance <- cbind(Ins_Id,Insurance)
+HealthPlanId<- c(101:200)
+HealthPlanId<-as.data.frame(HealthPlanId)
+Insurance <- cbind(HealthPlanId,Insurance)
+head(Insurance, 8)
+```
+
+Removing Special Characters from the columns:
+```{r}
+Insurance$`Consumer Satisfaction`<-gsub("I","0",Insurance$`Consumer Satisfaction`)
+Insurance$Prevention<-gsub("I","0", Insurance$Prevention)
+Insurance$Treatment<-gsub("I","0", Insurance$Treatment)
+Insurance$`Overall Rating`<-as.numeric(Insurance$`Overall Rating`)
+Insurance$`Consumer Satisfaction`<-as.numeric(Insurance$`Consumer Satisfaction`)
+Insurance$Prevention<-as.numeric(Insurance$Prevention)
+Insurance$Treatment<-as.numeric(Insurance$Treatment)
+head(Insurance)
+```
+
+Importing dataset for Medicare:
+```{r}
+library(readr)
+CaliforniaMedicare <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicare/CaliforniaMedicare.csv")
+head(CaliforniaMedicare)
+
+library(readr)
+NewYorkMedicare <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicare/NewYorkMedicare.csv")
+head(NewYorkMedicare)
+
+library(readr)
+PennsylvaniaMedicare <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicare/PennsylvaniaMedicare.csv")
+head(PennsylvaniaMedicare)
+
+library(readr)
+VirginiaMedicare <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicare/VirginiaMedicare.csv")
+head(VirginiaMedicare)
+
+library(readr)
+WisconsinMedicare <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicare/WisconsinMedicare.csv")
+head(WisconsinMedicare)
+```
+Cleaning the State column name:
+```{r}
+CaliforniaMedicare$State<-gsub("[[:upper:]]","",CaliforniaMedicare$State)
+CaliforniaMedicare$State<-'CA'
+head(California)
+
+NewYorkMedicare$State<-gsub("[[:upper:]]","",NewYorkMedicare$State)
+NewYorkMedicare$State<-'NY'
+head(NewYorkMedicare)
+
+PennsylvaniaMedicare$State<-gsub("[[:upper:]]","",PennsylvaniaMedicare$State)
+PennsylvaniaMedicare$State<-'PA'
+head(PennsylvaniaMedicare)
+
+VirginiaMedicare$State<-gsub("[[:upper:]]","",VirginiaMedicare$State)
+VirginiaMedicare$State<-'VA'
+head(VirginiaMedicare)
+
+WisconsinMedicare$State<-gsub("[[:upper:]]","",WisconsinMedicare$State)
+WisconsinMedicare$State<-'WI'
+head(WisconsinMedicare)
+```
+Combining these Medicare datasets into one.
+```{r}
+Medicare<-rbind(CaliforniaMedicare,NewYorkMedicare,PennsylvaniaMedicare,VirginiaMedicare, WisconsinMedicare)
+head(Medicare)
+Ins_Id<-2
+Medicare<-cbind(Ins_Id,Medicare)
+HealthPlanId<- c(1001:1099)
+HealthPlanId<-as.data.frame(HealthPlanId)
+Medicare <- cbind(HealthPlanId,Medicare)
+head(Medicare)
+```
+Removing Special Characters from the columns:
+```{r}
+Medicare$`Consumer Satisfaction`<-gsub("I","0",Medicare$`Consumer Satisfaction`)
+Medicare$Prevention<-gsub("I|0","0", Medicare$Prevention)
+Medicare$Treatment<-gsub("I","0", Medicare$Treatment)
+Medicare$`Overall Rating` <- gsub("Partial Data Reported|No Data Reported","0", Medicare$`Overall Rating`)
+Medicare$`Overall Rating`<-as.numeric(Medicare$`Overall Rating`)
+Medicare$`Consumer Satisfaction`<-as.numeric(Medicare$`Consumer Satisfaction`)
+Medicare$Prevention<-as.numeric(Medicare$Prevention)
+Medicare$Treatment<-as.numeric(Medicare$Treatment)
+head(Medicare)
+```
+
+Fixing multiple values in Consumer Satsifaction column:
+```{r}
+Medicare$`Consumer Satisfaction`[17]<-1.5
+Medicare$`Consumer Satisfaction`[20]<-2.0
+head(Medicare)
+```
+
+Importing dataset for Medicaid:
+```{r}
+library(readr)
+CaliforniaMedicaid <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicaid/CaliforniaMedicaid.csv")
+head(CaliforniaMedicaid)
+
+library(readr)
+NewYorkMedicaid <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicaid/NewYorkMedicaid.csv")
+head(NewYorkMedicaid)
+
+library(readr)
+PennsylvaniaMedicaid <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicaid/PennsylvaniaMedicaid.csv")
+head(PennsylvaniaMedicaid)
+
+library(readr)
+VirginiaMedicaid <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicaid/VirginiaMedicaid.csv")
+head(VirginiaMedicaid)
+
+library(readr)
+WisconsinMedicaid <- read_csv("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Project/Data/Medicaid/WisconsinMedicaid.csv")
+head(WisconsinMedicaid)
+```
+
+Cleaning the State column name:
+```{r}
+CaliforniaMedicaid$State<-gsub("[[:upper:]]","",CaliforniaMedicaid$State)
+CaliforniaMedicaid$State<-'CA'
+head(California)
+
+NewYorkMedicaid$State<-gsub("[[:upper:]]","",NewYorkMedicaid$State)
+NewYorkMedicaid$State<-'NY'
+head(NewYorkMedicaid)
+
+PennsylvaniaMedicaid$State<-gsub("[[:upper:]]","",PennsylvaniaMedicaid$State)
+PennsylvaniaMedicaid$State<-'PA'
+head(PennsylvaniaMedicaid)
+
+VirginiaMedicaid$State<-gsub("[[:upper:]]","",VirginiaMedicaid$State)
+VirginiaMedicaid$State<-'VA'
+head(VirginiaMedicaid)
+
+WisconsinMedicaid$State<-gsub("[[:upper:]]","",WisconsinMedicaid$State)
+WisconsinMedicaid$State<-'WI'
+head(WisconsinMedicaid)
+```
+Combining these datasets into one.
+```{r}
+Medicaid<-rbind(CaliforniaMedicaid,NewYorkMedicaid,PennsylvaniaMedicaid,VirginiaMedicaid, WisconsinMedicaid)
+head(Medicaid)
+Ins_Id<-3
+Medicaid<-cbind(Ins_Id,Medicaid)
+HealthPlanId<- c(5001:5073)
+HealthPlanId<-as.data.frame(HealthPlanId)
+Medicaid <- cbind(HealthPlanId,Medicaid)
+head(Medicaid)
+```
+Removing Special Characters from the columns:
+```{r}
+Medicaid$`Consumer Satisfaction`<-gsub("I","0",Medicaid$`Consumer Satisfaction`)
+Medicaid$Prevention<-gsub("I|0","0", Medicaid$Prevention)
+Medicaid$Treatment<-gsub("I","0", Medicaid$Treatment)
+Medicaid$`Overall Rating` <- gsub("Partial Data Reported|No Data Reported","0", Medicaid$`Overall Rating`)
+Medicaid$NCQA<-gsub("(In Process)|(Scheduled)|(Interim)|(In process)|[[:punct:]]"," ", Medicaid$NCQA)
+Medicaid$`Overall Rating`<-as.numeric(Medicaid$`Overall Rating`)
+Medicaid$`Consumer Satisfaction`<-as.numeric(Medicaid$`Consumer Satisfaction`)
+Medicaid$Prevention<-as.numeric(Medicaid$Prevention)
+Medicaid$Treatment<-as.numeric(Medicaid$Treatment)
+head(Medicaid)
+```
+
+Fixing multiple values in Prevention column:
+```{r}
+Medicaid$Prevention[67]<-0.5
+view(Medicaid)
+```
+Creating the Central Entity that connects all the other tables.
+```{r}
+Ins_Id<-c(1,2,3)
+Ins_type<-c("Private_Insurance", "Medicare", "Medicaid")
+Ins <- cbind(Ins_Id,Ins_type)
+Ins<-as.data.frame(Ins)
+head(Ins)
+```
+
+The four dataframes are Insurnace (Private Insurnace), Medicare and Medicaid and Ins
+```{r}
+view(Insurance)
+view(Medicare)
+view(Medicaid)
+view(Ins)
+```
+
+Connecting to database:
+```{r}
+library(RSQLite)
+database <- dbConnect(SQLite(), dbname="US_Insurance")
+dbWriteTable(conn = database, name = 'Insurance', value = Insurance, row.names=F, header=T, overwrite=T)
+dbWriteTable(conn = database, name = 'Medicare', value = Medicare, row.names=F, header=T, overwrite=T)
+dbWriteTable(conn = database, name = "Medicaid", value = Medicaid, row.names=F, header=T, overwrite=T)
+dbWriteTable(conn = database, name = "Ins", value = Ins, row.names=F, header=T, overwrite=T)
+dbListTables(database)
+```
+Checking the database by running custom queries:
+```{r}
+dbGetQuery(database, "select Max([Overall Rating]), [Plan Name], State
+           from Insurance 
+           where (State='CA')")
+```
+
+
+```{r}
+dbGetQuery(database, "select [Overall Rating], [Plan Name], State, Type, NCQA, [Consumer Satisfaction], [Prevention], Treatment
+           from Insurance 
+           where ([Consumer Satisfaction]>3.5 AND [Consumer Satisfaction]!='NA')")
+```
+```{r}
+dbGetQuery(database, "select [Overall Rating], [Plan Name], State, Type, NCQA, [Consumer Satisfaction], [Prevention], Treatment
+           from Medicare 
+           where ([Overall Rating]>4 AND [Consumer Satisfaction]>4 AND[Consumer Satisfaction]!='NA') AND [Overall Rating]!='NA' ")
+```
+```{r}
+dbGetQuery(database, "select [Overall Rating], [Plan Name], State, Type, NCQA, [Consumer Satisfaction], [Prevention], Treatment
+           from Medicare 
+           where ([Treatment]>4 AND [Prevention]>4 AND [Treatment]!='NA')")
+```
+```{r}
+dbGetQuery(database, "select [Overall Rating], [Plan Name], State, Type, NCQA, [Consumer Satisfaction], [Prevention], Treatment
+           from Medicaid
+           where ([Overall Rating]>4 AND [Prevention]<4 AND [Prevention]!='NA' AND [Overall Rating]!='NA')")
+```
+```{r}
+dbGetQuery(database, "select [Overall Rating], [Plan Name], State, Type, NCQA, [Consumer Satisfaction], [Prevention], Treatment
+           from Medicaid
+           where ([Overall Rating]=4.5 AND [Overall Rating]!='NA') AND State='NY'")
+```
+
+```{r}
+dbGetQuery(database, "select *
+                      from Ins
+           ")
+```
+As you can see, I have tested all the four tables and the database is working efficiently.
+Now I wish to carry out analysis to answer my research questions,
+1. Average State ratings (of all the three insurance types) based on consumer satisfaction, treatment, and prevention.
+Private Insurance Analysis
+```{r}
+B<- Insurance
+B<-na.omit(B)
+view(B)
+
+b <- B %>% 
+  na.omit() %>% 
+  group_by(State) %>%
+  summarise_at(vars(-NCQA, -'Plan Name',-Type,-HealthPlanId, -Ins_Id),funs(mean(., na.rm=TRUE)))
+view(b)
+
+Ans1_a<- b[order(-b$`Overall Rating`),]
+head(Ans1_a)
+```
+In the Private Insurance analysis, Pennsylvania has the highest overall, consumer satisfaction and prevention rating whereas, Wisconsin has the highest treatment rating.
+
+Medicare Analysis:
+```{r}
+C<- Medicare
+C<-na.omit(C)
+view(C)
+
+c <- C %>% 
+  na.omit() %>% 
+  group_by(State) %>%
+  summarise_at(vars(-NCQA, -'Plan Name',-Type, -HealthPlanId, -Ins_Id),funs(mean(., na.rm=TRUE)))
+view(c)
+
+Ans1_b<- c[order(-c$`Overall Rating`),]
+head(Ans1_b)
+```
+In the Medicare analysis, New York has the highest overall and prevention rating whereas, Wisconsin has the highest treatment rating and Pennsylvania has highest consumer satisfaction rating.
+
+Medicaid Analysis:
+```{r}
+D<- Medicaid
+D<-na.omit(D)
+view(D)
+
+d <- D %>% 
+  na.omit() %>% 
+  group_by(State) %>%
+  summarise_at(vars(-NCQA, -'Plan Name',-Type,-HealthPlanId, -Ins_Id),funs(mean(., na.rm=TRUE)))
+view(d)
+
+Ans1_c<- d[order(-d$`Overall Rating`),]
+head(Ans1_c)
+```
+In the Medicaid Analysis, Pennsylvania has the highest Overall Rating and Treatment rating, Virginia has the highest Consumer satisfaction ratings whereas New York has the highest prevention rating.
+
+2. Which insurance plan provides the best customer satisfaction, treatment, and prevention?
+Health Plans for the Private Insurance:
+```{r}
+Ans2_a_1 <- B[order(-B$`Consumer Satisfaction`),]
+Ans2_a_1 <- Ans2_a_1 %>% 
+  select(`Plan Name`, State, `Consumer Satisfaction`)
+head(Ans2_a_1,4)
+
+Ans2_a_2 <- B[order(-B$Prevention),]
+Ans2_a_2 <- Ans2_a_2 %>% 
+  select(`Plan Name`, State, Prevention)
+head(Ans2_a_2,4)
+
+Ans2_a_3 <- B[order(-B$Treatment),]
+Ans2_a_3 <- Ans2_a_3 %>% 
+  select(`Plan Name`, State, Treatment)
+head(Ans2_a_3,4)
+```
+Health Plan for Medicare:
+```{r}
+
+Ans2_b_1 <- C[order(-C$`Consumer Satisfaction`),]
+Ans2_b_1 <- Ans2_b_1 %>% 
+  select(`Plan Name`, State, `Consumer Satisfaction`)
+head(Ans2_b_1,4)
+
+Ans2_b_2 <- C[order(-C$Prevention),]
+Ans2_b_2 <- Ans2_b_2 %>% 
+  select(`Plan Name`, State, Prevention)
+head(Ans2_b_2,4)
+
+Ans2_b_3 <- C[order(-C$Treatment),]
+Ans2_b_3 <- Ans2_b_3 %>% 
+  select(`Plan Name`, State, Treatment)
+head(Ans2_b_3,4)
+```
+Health Plan for Medicaid:
+```{r}
+Ans2_c_1 <- D[order(-D$`Consumer Satisfaction`),]
+Ans2_c_1 <- Ans2_c_1 %>% 
+  select(`Plan Name`, State, `Consumer Satisfaction`)
+head(Ans2_c_1,4)
+
+Ans2_c_2 <- D[order(-D$Prevention),]
+Ans2_c_2 <- Ans2_c_2 %>% 
+  select(`Plan Name`, State, Prevention)
+head(Ans2_c_2,4)
+
+Ans2_c_3 <- D[order(-D$Treatment),]
+Ans2_c_3 <- Ans2_c_3 %>% 
+  select(`Plan Name`, State, Treatment)
+head(Ans2_c_3,4)
+```
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```

@@ -1,0 +1,203 @@
+---
+title: "Week7B"
+author: "Sharad Bajpai"
+date: "11/3/2019"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+
+Installing/loading the latest installr package:
+```{r}
+library(installr)
+```
+
+ENVIRONMENT SETUP
+
+Step 1:
+```{r}
+setwd("C:/Users/bajpa/Downloads/Collecting, Storing, Retrieving Data/Week7")
+```
+
+Step 2:
+```{r}
+library(bitops)
+library(RCurl)
+library(ROAuth)
+library(rjson)
+library(ndjson)
+library(streamR)
+library(twitteR)
+library(installr)
+```
+
+Step 3:
+```{r}
+download.file(url="http://curl.haxx.se/ca/cacert.pem",
+              destfile="cacert.pem")
+```
+
+Step 4:
+```{r}
+outFile <- "tweets_sample.json"
+```
+
+Step 5:
+```{r}
+requestURL <- "https://api.twitter.com/oauth/request_token"
+accessURL <- "https://api.twitter.com/oauth/access_token"
+authURL <- "https://api.twitter.com/oauth/authorize"
+consumerKey <- "cSZAJsDxhGUFHPpjvC0VqobPD"
+consumerSecret <- "xpDhczS91UBdvZPOpZc6IjyRmFAHfWpjRYFgAPcoILioQjeXnh"
+accessToken <- "1188575616251125760-GKPSvo9G2LTVaHmJChLvIHAQz4gVpH"
+accessTokenSecret<- "3zpoJufC4Mxa7c19wNybj8IdJRl89K8oNezNO1ebZyPbQ"
+```
+
+Step 6:
+
+my_oauth <- OAuthFactory$new(consumerKey=consumerKey, consumerSecret=consumerSecret,
+requestURL=requestURL,
+accessURL=accessURL,
+authURL=authURL)
+
+my_oauth$handshake(cainfo="cacert.pem")
+
+
+
+$$Solution1$$
+The solution was to update R installing/loading the latest 
+
+install.packages("installr") 
+
+library(installr)
+
+updateR() 
+
+updating R and re-install the packages that I used for the Twitter API (TwitteR, streamR)
+
+Output: You don't need to update R because you are using the latest version.
+
+Date/Time: 10/30, 10 am And 10/25, 3pm
+
+
+
+$$Solution2$$
+
+install.packages("devtools")
+
+library(devtools)
+
+Output : Error in function (type, msg, asError = TRUE): Unknown SSL protocol error in connection to api.twitter.com:443
+
+Date/Time: 10/30,10am And 10/25, 3pm
+
+
+$$Solution 3$$
+
+library(rsconnect)
+
+system("echo | openssl s_client -connect https://developer.twitter.com/en/apps:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'")
+
+rsconnect::addConnectServer(url="https://server.com", certificate = "cacert.pem", 'test server')
+
+Output: [1] 127
+
+Output: Server 'test server' added successfully: https://server.com/__api__
+
+Date/Time: 10/30, 10 am And 10/25, 5pm
+
+$$Solution 4$$
+
+Tried regenerating accessToken, AccessTokenSecret, ConsumerKey and ConsumerKeySecret. Tried running all the solution codes again. That didnt help either.
+
+Output: Error in function (type, msg, asError = TRUE)  : 
+  Unknown SSL protocol error in connection to api.twitter.com:443
+
+Date/Time: 10/31, 3pm And 10/26, 7pm
+
+
+$$Solution 5$$
+
+my_oauth <- list( consumerKey=consumerKey,
+consumerSecret=consumerSecret,
+requestURL=requestURL,
+accessURL=accessURL,
+authURL=authURL)
+
+my_oauth$handshake(cainfo="cacert.pem")
+
+Output: Attempt to appy non-funciton
+
+Date/Time: 10/31, 3pm And 10/27, 2pm
+
+
+$$Solution 6$$
+
+library(RCurl)
+
+system("echo | openssl s_client -connect https://developer.twitter.com/en/apps:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'")
+
+Output - [1] 127
+
+Date/time : 10/31, 4 pm
+
+
+$$Solution 7$$
+
+.opts = list(ssl.verifypeer = TRUE)
+
+Output : Error in function (type, msg, asError = TRUE): Unknown SSL protocol error in connection to api.twitter.com:443
+
+Date/Time: 10/31, 6 pm 
+
+
+$$Solution 8$$
+
+my_oauth <- OAuthFactory$new( consumerKey=consumerKey,
+                            consumerSecret=consumerSecret,
+                              requestURL=requestURL,
+                              accessURL=accessURL,
+                              authURL=authURL)
+
+my_oauth$handshake(cainfo=system.file("CurlSSL","cacert.pem", package = "RCurl"))
+
+Output: Error in function (type, msg, asError = TRUE) : Unknown SSL protocol error in connection to api.twitter.com:443
+
+Date/Time: 10/31, 7 pm And 11/2, 4pm
+
+$$Solution 9$$
+
+curl_setopt($ch, CURLOPT_SSLVERSION,3)
+
+Output: Error in function (type, msg, asError = TRUE) : Unknown SSL protocol error in connection to api.twitter.com:443
+
+Date/Time: 11/2, 6 pm 
+
+Step 7
+
+setup_twitter_oauth(consumerKey, consumerSecret, accessToken,
+accessTokenSecret)
+
+GETTING TWEET DATA
+
+Step 1:
+
+sampleStream( file=outFile, oauth=my_oauth, tweets=100 )
+
+Step 2:
+
+follow <- ""
+
+track <- "Boston,RedSoxs"
+
+location <- c(23.786699, 60.878590, 37.097000, 77.840813)
+
+filterStream( file.name=outFile, follow=follow, track=track, locations=location, oauth=my_oauth, timeout=5)
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
